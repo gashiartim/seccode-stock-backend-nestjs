@@ -12,8 +12,18 @@ export class ProductService {
     private productRepository: Repository<Product>,
   ) {}
 
-  create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto) {
     const newProduct = this.productRepository.create(createProductDto);
+
+    const product = await this.productRepository.findOne({
+      where: { size: newProduct.size, description: newProduct.description },
+    });
+
+    if (product) {
+      console.log('test', product);
+
+      throw new HttpException('Product already exists', HttpStatus.BAD_REQUEST);
+    }
 
     return this.productRepository.save(newProduct);
   }

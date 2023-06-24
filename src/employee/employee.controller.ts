@@ -10,7 +10,9 @@ import {
 import { EmployeeService } from './employee.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Employees')
 @Controller('employees')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
@@ -55,5 +57,13 @@ export class EmployeeController {
     @Param('productId') productId: string,
   ) {
     return this.employeeService.addProductToEmployee(id, productId);
+  }
+
+  @Delete(':id/products/:productId')
+  async removeProductFromEmployee(
+    @Param('id') id: string,
+    @Param('productId') productId: string,
+  ) {
+    return this.employeeService.removeProductFromEmployee(id, productId);
   }
 }

@@ -19,13 +19,18 @@ export class Product {
   @Column({ nullable: true, type: 'text' })
   description: string;
 
+  @Column({ nullable: false, type: 'text' })
+  label: string;
+
   @Column({ nullable: false, type: 'text', default: '' })
   size: string;
 
   @Column({ nullable: false, type: 'int', default: 0 })
   quantity: number;
 
-  @ManyToMany(() => Employee, (employee) => employee.products, {})
+  @ManyToMany(() => Employee, (employee) => employee.products, {
+    onDelete: 'NO ACTION',
+  })
   employees?: Employee[];
 
   @CreateDateColumn()

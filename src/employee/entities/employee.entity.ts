@@ -70,7 +70,9 @@ export class Employee {
   })
   license_expiration: string;
 
-  @ManyToMany(() => Product, (product) => product.employees)
+  @ManyToMany(() => Product, (product) => product.employees, {
+    onDelete: 'NO ACTION',
+  })
   @JoinTable()
   products: Product[];
 

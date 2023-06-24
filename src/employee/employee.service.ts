@@ -97,6 +97,47 @@ export class EmployeeService {
       name: product.name,
       quantity: product.quantity - 1,
       size: product.size,
+      label: product.label,
+    });
+
+    await this.employeeRepository.save(employee);
+
+    return this.employeeRepository
+      .createQueryBuilder('employee')
+      .leftJoinAndSelect('employee.products', 'product')
+      .getOne();
+  }
+
+  async removeProductFromEmployee(employeeId: string, productId: string) {
+    const employee = await this.findEmployeeByIdOrFail(employeeId);
+    const product = await this.productService.findProductByIdOrFail(productId);
+
+    if (!Array.isArray(employee.products)) {
+      throw new HttpException(
+        'This employee does not have any products',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const productIndex = employee.products.findIndex(
+      (product) => product.id === productId,
+    );
+
+    if (productIndex < 0) {
+      throw new HttpException(
+        'This employee does not have this product',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    employee.products.splice(productIndex, 1);
+
+    await this.productService.update(product.id, {
+      description: product.description,
+      name: product.name,
+      quantity: product.quantity + 1,
+      size: product.size,
+      label: product.label,
     });
     await this.employeeRepository.save(employee);
 

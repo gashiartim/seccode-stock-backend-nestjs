@@ -8,7 +8,6 @@ import { Employee } from './employee/entities/employee.entity';
 import { UserModule } from './user/user.module';
 import { ProductModule } from './product/product.module';
 import { User } from './user/entities/user.entity';
-import { StockModule } from './stock/stock.module';
 import { Product } from './product/entities/product.entity';
 
 @Module({
@@ -27,7 +26,6 @@ import { Product } from './product/entities/product.entity';
     EmployeeModule,
     UserModule,
     ProductModule,
-    StockModule,
   ],
   controllers: [AppController],
   providers: [AppService],

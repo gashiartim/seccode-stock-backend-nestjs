@@ -27,4 +27,9 @@ export class CreateProductDto {
   @IsNumber()
   @IsNotEmpty()
   quantity: number;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  label: string;
 }
