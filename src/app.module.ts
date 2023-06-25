@@ -3,26 +3,41 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EmployeeModule } from './employee/employee.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Employee } from './employee/entities/employee.entity';
 import { UserModule } from './user/user.module';
 import { ProductModule } from './product/product.module';
 import { User } from './user/entities/user.entity';
 import { Product } from './product/entities/product.entity';
+import { AuthModule } from './auth/auth.module';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'me',
-      password: 'password',
-      database: 'seccode_stock_database',
-      entities: [User, Employee, Product],
-      synchronize: true,
-    }),
     ConfigModule.forRoot(),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: () => ({
+        type: 'postgres',
+        host: 'localhost',
+        port: 5432,
+        username: 'me',
+        password: 'password',
+        database: 'seccode_stock_database',
+        autoLoadEntities: true,
+        synchronize: true,
+        entities: [Employee, User, Product],
+      }),
+      dataSourceFactory: async (options) => {
+        try {
+          return await new DataSource(options).initialize();
+        } catch (err) {
+          console.log(err);
+        }
+      },
+    }),
+    AuthModule,
     EmployeeModule,
     UserModule,
     ProductModule,

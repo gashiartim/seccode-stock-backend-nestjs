@@ -19,7 +19,7 @@ export class RegisterUserDto {
   @IsDefined()
   @Length(6)
   @ApiProperty()
-  @SameAs('password_confirm', {
+  @SameAs('passwordConfirm', {
     message: "Password confirmation doesn't match.",
   })
   password: string;

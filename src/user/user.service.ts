@@ -1,18 +1,25 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  forwardRef,
+} from '@nestjs/common';
 import { LoginUserDto, RegisterUserDto } from './dto/auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { HashService } from 'src/services/hash/HashService';
-import { AuthServiceGeneral } from 'src/services/auth/AuthService';
+import * as bcrypt from 'bcrypt';
+import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>,
-    private readonly hashService: HashService,
-    private readonly authService: AuthServiceGeneral,
+    private readonly userRepository: Repository<User>,
+    @Inject(forwardRef(() => AuthService))
+    private authService: AuthService,
   ) {}
 
   public async register(data: RegisterUserDto) {
@@ -32,47 +39,35 @@ export class UserService {
       .where({ id: user.id })
       .getOne();
 
-    const { password, ...userWithoutPassword } = user;
-
-    return this.authService.sign(
-      {
-        userId: user.id,
-      },
-      { user: { ...userWithoutPassword, id: user.id, email: user.email } },
-    );
+    return user;
   }
 
   public async login(data: LoginUserDto) {
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .where({
-        email: data.email,
-      })
-      .addSelect('user.password')
-      .getOne();
+    const user = await this.findUserByEmail(data.email);
 
     if (!user) {
-      throw new HttpException('User does not exists!', HttpStatus.NOT_FOUND);
+      throw new HttpException('Invalid credentials!', HttpStatus.NOT_FOUND);
     }
 
-    if (!(await this.hashService.compare(data.password, user.password))) {
-      throw new HttpException(
-        'Password does not match!',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
+    const isMatch = await bcrypt.compare(data.password, user.password);
 
-    return this.authService.sign(
-      { userId: user.id, email: user.email },
-      {
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-        },
-      },
-    );
+    if (isMatch) {
+      const { access_token } = await this.authService.login(user);
+
+      return {
+        access_token,
+        user,
+      };
+    }
+  }
+
+  async profile(req) {
+    const user = req.user;
+
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .where({ id: user.id })
+      .getOne();
   }
 
   public async getUserByEmail(email: string) {
@@ -89,5 +84,12 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async findUserByEmail(email: string): Promise<User> {
+    return await this.userRepository.findOne({
+      where: { email },
+      select: ['id', 'firstName', 'lastName', 'email', 'password'],
+    });
   }
 }
