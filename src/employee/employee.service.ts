@@ -26,11 +26,17 @@ export class EmployeeService {
     return this.employeeRepository.find();
   }
 
-  findOne(id: string) {
-    return this.employeeRepository.findOne({
+  async findOne(id: string) {
+    const employee = await this.employeeRepository.findOne({
       where: { id },
       relations: ['products'],
     });
+
+    if (!employee) {
+      throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
+    }
+
+    return employee;
   }
 
   async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
@@ -145,5 +151,11 @@ export class EmployeeService {
       .createQueryBuilder('employee')
       .leftJoinAndSelect('employee.products', 'product')
       .getOne();
+  }
+
+  async getProductsByEmployee(employeeId: string) {
+    const employee = await this.findEmployeeByIdOrFail(employeeId);
+
+    return employee.products;
   }
 }

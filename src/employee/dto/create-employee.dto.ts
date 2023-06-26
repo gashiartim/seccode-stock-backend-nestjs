@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateEmployeeDto {
   @IsString()
@@ -41,4 +47,9 @@ export class CreateEmployeeDto {
   @IsNotEmpty()
   @ApiProperty()
   securing_point: string;
+
+  @IsNumber()
+  @IsOptional()
+  @ApiProperty()
+  license_expiration: number;
 }

@@ -66,9 +66,9 @@ export class Employee {
 
   @Column({
     nullable: true,
-    type: 'text',
+    type: 'bigint',
   })
-  license_expiration: string;
+  license_expiration: number;
 
   @ManyToMany(() => Product, (product) => product.employees, {
     onDelete: 'NO ACTION',
