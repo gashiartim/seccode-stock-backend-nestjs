@@ -1,9 +1,7 @@
-import { Employee } from 'src/employee/entities/employee.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -27,11 +25,6 @@ export class Product {
 
   @Column({ nullable: false, type: 'int', default: 0 })
   quantity: number;
-
-  @ManyToMany(() => Employee, (employee) => employee.products, {
-    onDelete: 'NO ACTION',
-  })
-  employees?: Employee[];
 
   @CreateDateColumn()
   created_at: Date;

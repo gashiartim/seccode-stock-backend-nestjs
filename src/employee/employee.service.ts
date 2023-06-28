@@ -5,14 +5,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Employee } from './entities/employee.entity';
 import { Repository } from 'typeorm';
 import { ProductService } from 'src/product/product.service';
-import { IsArray } from 'class-validator';
-import { Product } from 'src/product/entities/product.entity';
+import { EmployeeProduct } from './entities/employee-products';
 
 @Injectable()
 export class EmployeeService {
   constructor(
     @InjectRepository(Employee)
     private employeeRepository: Repository<Employee>,
+    @InjectRepository(EmployeeProduct)
+    private employeeProductRepository: Repository<EmployeeProduct>,
     private readonly productService: ProductService,
   ) {}
 
@@ -29,7 +30,7 @@ export class EmployeeService {
   async findOne(id: string) {
     const employee = await this.employeeRepository.findOne({
       where: { id },
-      relations: ['products'],
+      relations: ['gears'],
     });
 
     if (!employee) {
@@ -59,10 +60,18 @@ export class EmployeeService {
   }
 
   async findEmployeeByIdOrFail(id: string) {
-    const employee = await this.employeeRepository.findOne({
-      where: { id },
-      relations: { products: true },
-    });
+    const employee = await this.employeeRepository
+      .createQueryBuilder('employee')
+      .leftJoinAndSelect('employee.gears', 'employeeGear')
+      .leftJoin('employeeGear.product', 'product')
+      .addSelect([
+        'product.id',
+        'product.name',
+        'product.size',
+        'product.label',
+      ])
+      .where('employee.id = :id', { id })
+      .getOne();
 
     if (!employee) {
       throw new HttpException('Employee not found', HttpStatus.NOT_FOUND);
@@ -92,10 +101,16 @@ export class EmployeeService {
       );
     }
 
-    if (!Array.isArray(employee.products)) {
-      employee.products = [product];
+    const employeeProduct = new EmployeeProduct();
+    employeeProduct.product = product;
+    employeeProduct.employee = employee;
+
+    await this.employeeProductRepository.save(employeeProduct);
+
+    if (!Array.isArray(employee.gears)) {
+      employee.gears = [employeeProduct];
     } else {
-      employee.products.push(product);
+      employee.gears.push(employeeProduct);
     }
 
     await this.productService.update(product.id, {
@@ -110,33 +125,42 @@ export class EmployeeService {
 
     return this.employeeRepository
       .createQueryBuilder('employee')
-      .leftJoinAndSelect('employee.products', 'product')
+      .leftJoinAndSelect('employee.gears', 'employeeGear')
+      .leftJoin('employeeGear.product', 'product')
+      .addSelect(['product.name', 'product.id', 'product.quantity'])
       .getOne();
   }
 
-  async removeProductFromEmployee(employeeId: string, productId: string) {
+  async removeProductFromEmployee(employeeId: string, employeeGearId: string) {
     const employee = await this.findEmployeeByIdOrFail(employeeId);
-    const product = await this.productService.findProductByIdOrFail(productId);
 
-    if (!Array.isArray(employee.products)) {
+    if (!Array.isArray(employee.gears)) {
       throw new HttpException(
         'This employee does not have any products',
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    const productIndex = employee.products.findIndex(
-      (product) => product.id === productId,
-    );
+    const employeeGearIndex = employee.gears.findIndex((employeeGear) => {
+      return employeeGear.id === employeeGearId;
+    });
 
-    if (productIndex < 0) {
+    if (employeeGearIndex < 0) {
       throw new HttpException(
         'This employee does not have this product',
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    employee.products.splice(productIndex, 1);
+    const employeeGear = employee.gears[employeeGearIndex];
+
+    const product = await this.productService.findProductByIdOrFail(
+      employeeGear.product.id,
+    );
+
+    employee.gears = employee.gears.filter(
+      (employeeGear) => employeeGear.id !== employeeGearId,
+    );
 
     await this.productService.update(product.id, {
       description: product.description,
@@ -149,13 +173,15 @@ export class EmployeeService {
 
     return this.employeeRepository
       .createQueryBuilder('employee')
-      .leftJoinAndSelect('employee.products', 'product')
+      .leftJoinAndSelect('employee.gears', 'emplyeeGear')
+      .leftJoin('emplyeeGear.product', 'product')
+      .addSelect(['product.name', 'product.id', 'product.quantity'])
       .getOne();
   }
 
   async getProductsByEmployee(employeeId: string) {
     const employee = await this.findEmployeeByIdOrFail(employeeId);
 
-    return employee.products;
+    return employee.gears;
   }
 }

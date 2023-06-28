@@ -1,13 +1,12 @@
-import { Product } from 'src/product/entities/product.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinTable,
-  ManyToMany,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { EmployeeProduct } from './employee-products';
 
 @Entity('employees')
 export class Employee {
@@ -70,11 +69,17 @@ export class Employee {
   })
   license_expiration: number;
 
-  @ManyToMany(() => Product, (product) => product.employees, {
-    onDelete: 'NO ACTION',
-  })
-  @JoinTable()
-  products: Product[];
+  // @ManyToMany(() => Product, (product) => product.employees, {
+  //   onDelete: 'NO ACTION',
+  // })
+  // @JoinTable()
+  // products: Product[];
+
+  @OneToMany(
+    () => EmployeeProduct,
+    (employeeProduct) => employeeProduct.employee,
+  )
+  gears: EmployeeProduct[];
 
   @CreateDateColumn()
   created_at: Date;

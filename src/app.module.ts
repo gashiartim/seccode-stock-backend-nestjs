@@ -11,6 +11,7 @@ import { User } from './user/entities/user.entity';
 import { Product } from './product/entities/product.entity';
 import { AuthModule } from './auth/auth.module';
 import { DataSource } from 'typeorm';
+import { EmployeeProduct } from './employee/entities/employee-products';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { DataSource } from 'typeorm';
         database: 'seccode_stock_database',
         autoLoadEntities: true,
         synchronize: true,
-        entities: [Employee, User, Product],
+        entities: [Employee, User, Product, EmployeeProduct],
       }),
       dataSourceFactory: async (options) => {
         try {

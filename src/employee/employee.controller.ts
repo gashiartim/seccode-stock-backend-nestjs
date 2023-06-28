@@ -67,8 +67,8 @@ export class EmployeeController {
     return this.employeeService.removeProductFromEmployee(id, productId);
   }
 
-  @Get(':id/products')
-  async getProductsByEmployee(@Param('id') id: string) {
+  @Get(':id/gears')
+  async getEmployeeProducts(@Param('id') id: string) {
     return this.employeeService.getProductsByEmployee(id);
   }
 }
